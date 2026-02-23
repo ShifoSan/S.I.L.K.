@@ -145,7 +145,10 @@ async function fetchAPIBackground(history, newUserText, imageBase64, systemPromp
   const model = modelOverride || 'gemma-3-27b-it';
   const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-  const parts = [{ text: newUserText || '' }];
+  // Explicitly cast to String to avoid "Starting an object on a scalar field" API error
+  const safeText = String(newUserText || '');
+
+  const parts = [{ text: safeText }];
   if (imageBase64) {
     let mimeType = 'image/jpeg';
     let data = imageBase64;
@@ -156,14 +159,20 @@ async function fetchAPIBackground(history, newUserText, imageBase64, systemPromp
 
   const personaPrefix = systemPrompt
     ? [
-        { role: 'user',  parts: [{ text: `[System Instructions] ${systemPrompt}` }] },
+        { role: 'user',  parts: [{ text: `[System Instructions] ${String(systemPrompt)}` }] },
         { role: 'model', parts: [{ text: 'Understood.' }] },
       ]
     : [];
 
+  // Robust history mapping with String casting
+  const formattedHistory = history.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: String(m.content || '') }]
+  }));
+
   const contents = [
     ...personaPrefix,
-    ...history.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
+    ...formattedHistory,
     { role: 'user', parts }
   ];
 
