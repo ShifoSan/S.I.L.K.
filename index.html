@@ -471,6 +471,16 @@ p code, li code {
 #send-btn:active { transform: scale(0.93); }
 #send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
+/* Agent Mode Toggle */
+#agent-mode-btn { transition: all 0.3s ease; }
+#agent-mode-btn.active {
+  color: #00e5ff;
+  background: rgba(0, 229, 255, 0.1);
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+}
+
 /* ═══════════════════════════════════════════════
    MODALS
 ═══════════════════════════════════════════════ */
@@ -898,6 +908,9 @@ p code, li code {
       <button class="side-btn" id="camera-btn" title="Attach Image">
         <i class="ph ph-image"></i>
       </button>
+      <button class="side-btn" id="agent-mode-btn" title="Agent Mode">
+        <i class="ph ph-robot"></i>
+      </button>
       <input type="file" id="file-input" accept="image/*" style="display:none;" />
 
       <div class="input-pill">
@@ -1094,6 +1107,7 @@ const state = {
   micActive: false,
   canvasData: null,  // { code, lang, isHTML }
   confirmCb: null,
+  agentMode: false,
 };
 
 /* ═══════════════════════════════════════════════
@@ -1473,6 +1487,12 @@ async function sendMessage(text) {
   const chat = currentChat(); if (!chat) return;
   if (state.isStreaming) return;
   text = text.trim(); if (!text && !state.pendingImage) return;
+
+  // Intercept if Agent Mode is active
+  if (state.agentMode) {
+    runAgentMode(text);
+    return;
+  }
 
   const userMsg = { role: 'user', content: text, ts: Date.now() };
   if (state.pendingImage) {
@@ -2107,6 +2127,13 @@ document.getElementById('camera-btn').addEventListener('click', () => document.g
 document.getElementById('file-input').addEventListener('change', (e) => handleImageFile(e.target.files[0]));
 document.getElementById('img-remove').addEventListener('click', clearImage);
 
+// Agent Mode Toggle
+document.getElementById('agent-mode-btn').addEventListener('click', () => {
+  state.agentMode = !state.agentMode;
+  document.getElementById('agent-mode-btn').classList.toggle('active', state.agentMode);
+  toast(state.agentMode ? 'Agent Mode Activated' : 'Agent Mode Disabled', 'success');
+});
+
 // Mic
 document.getElementById('mic-btn').addEventListener('click', toggleMic);
 
@@ -2172,5 +2199,6 @@ document.addEventListener('touchend', (e) => {
 ═══════════════════════════════════════════════ */
 init();
 </script>
+<script src="agent.js"></script>
 </body>
 </html>
